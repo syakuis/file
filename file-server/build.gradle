@@ -1,6 +1,4 @@
 apply plugin: "application"
-apply plugin: "org.springframework.boot"
-apply plugin: "io.spring.dependency-management"
 
 configurations {
     implementation.exclude module: "spring-boot-starter-tomcat"

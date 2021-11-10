@@ -2,7 +2,8 @@ application-default.yml
 application-default.properties
 build.yml
 src/main/resources/static/docs
-temp/*
+!file-client/temp/.gitkeep
+file-client/temp/*.jpeg
 
 *~
 .DS_Store
