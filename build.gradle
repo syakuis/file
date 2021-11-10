@@ -1,27 +1,61 @@
-apply plugin: "java"
-apply plugin: "idea"
+// https://docs.spring.io/spring-boot/docs/2.4.5/reference/html/dependency-versions.html#dependency-versions
+// https://docs.spring.io/spring-boot/docs/2.4.5/reference/htmlsingle
+// https://docs.spring.io/spring-cloud/docs/2020.0.3/reference/html/
+buildscript {
+    ext {
+        groupId = "io.github.syaku"
+        versionName = "1.0.0-SNAPSHOT"
+        springBootVersion = "2.4.5"
+        springCloudVersion = "2020.0.3"
+        junitVersion = "5.7.1"
+        lombokVersion = "1.18.12"
+        jacksonVersion = "2.11.4"
+    }
+
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath "io.franzbecker:gradle-lombok:3.1.0"
+        classpath "org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}"
+        classpath "io.spring.gradle:dependency-management-plugin:1.0.8.RELEASE"
+    }
+}
 
 wrapper {
     gradleVersion = "7.2"
 }
 
-repositories {
-    mavenCentral()
-}
+subprojects {
+    apply plugin: "java"
+    apply plugin: "io.franzbecker.gradle-lombok"
 
-sourceCompatibility = JavaVersion.VERSION_11
-targetCompatibility = JavaVersion.VERSION_11
+    repositories {
+        mavenCentral()
+    }
 
-compileJava.options.encoding = 'UTF-8'
+    group groupId
+    version versionName
 
-dependencies {
-    testImplementation(platform('org.junit:junit-bom:5.8.1'))
-    testImplementation('org.junit.jupiter:junit-jupiter:5.8.1')
-}
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
 
-test {
-    useJUnitPlatform()
-    testLogging {
-        events "passed", "skipped", "failed"
+    compileJava.options.encoding = 'UTF-8'
+
+    dependencies {
+        testImplementation(platform('org.junit:junit-bom:5.8.1'))
+        testImplementation('org.junit.jupiter:junit-jupiter:5.8.1')
+    }
+
+    test {
+        useJUnitPlatform()
+        testLogging {
+            events "passed", "skipped", "failed"
+        }
+        systemProperty 'spring.profiles.active', 'test'
     }
 }

@@ -1,2 +1,4 @@
-rootProject.name = 'spring-gradle-template'
+rootProject.name = 'spring-file'
+include 'file-server'
+include 'file-client'
 

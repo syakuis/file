@@ -12,19 +12,18 @@ import java.net.URLConnection;
  * @since 2021-11-09
  */
 class HttpFileLoader {
-    private final String uri = "https://www.google.com/imgres?imgurl=https%3A%2F%2Fimage.news1.kr%2Fsystem%2Fphotos%2F2021%2F10%2F20%2F5024865%2Farticle.jpg%2Fdims%2Foptimize&imgrefurl=https%3A%2F%2Fwww.news1.kr%2Farticles%2F%3F4480071&tbnid=acbEAa-xcXByBM&vet=12ahUKEwi54J-Qnov0AhVUAKYKHYogAJIQMygDegUIARDKAQ..i&docid=ggeAVhsyQi1aTM&w=560&h=840&itg=1&q=%ED%95%9C%EC%86%8C%ED%9D%AC&ved=2ahUKEwi54J-Qnov0AhVUAKYKHYogAJIQMygDegUIARDKAQ";
+    private final String uri = "https://image.news1.kr/system/photos/2021/10/20/5024865/article.jpg/dims/optimize";
 
     @Test
     void test() throws Exception {
         URL url = new URL(uri);
         URLConnection urlConnection = url.openConnection();
         InputStream inputStream = urlConnection.getInputStream();
-        FileOutputStream fileOutputStream = new FileOutputStream("./image.jpeg");
+        FileOutputStream fileOutputStream = new FileOutputStream("./temp/image.jpeg");
         byte[] buffer = new byte[1024];
         int readBytes;
         while ((readBytes = inputStream.read(buffer)) != -1) {
             fileOutputStream.write(buffer, 0, readBytes);
         }
-
     }
 }
