@@ -1,0 +1,7 @@
+server:
+  servlet:
+    encoding:
+      force-response: true
+file-server:
+  repository:
+    path: /Users/sgchoi2/develop/github/file/file-server/repository

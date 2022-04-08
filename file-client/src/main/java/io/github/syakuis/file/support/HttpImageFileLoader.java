@@ -1,11 +1,10 @@
 package io.github.syakuis.file.support;
 
-import lombok.extern.slf4j.Slf4j;
-
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author Seok Kyun. Choi.

@@ -1,14 +1,5 @@
 # file
 
-## server
+## 파일 다루기
 
-- [ ] http multipart
-- [ ] rsocket
-- [ ] ftp
-
-## client
-
-- http image load
-- disk image load
-- async image task
-  - sender and save
+파일 다운로드 요청 -> 파일 작성 -> 파일 저장 -> 파일 다운로드 응답

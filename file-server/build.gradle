@@ -1,37 +1,18 @@
 apply plugin: "application"
 
-configurations {
-    implementation.exclude module: "spring-boot-starter-tomcat"
-    testImplementation.exclude group: "junit", module: "junit"
-    querydsl.extendsFrom compileClasspath
-}
-
-dependencyManagement {
-    imports {
-        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
-    }
-}
-
 dependencies {
-    compileOnly "org.projectlombok:lombok:${lombokVersion}"
-    testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
-    annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
-    annotationProcessor "org.projectlombok:lombok-mapstruct-binding:0.2.0"
-    testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
-
-    implementation "org.apache.commons:commons-lang3:3.7"
-    implementation "commons-io:commons-io:2.6"
-
     implementation "org.springframework.boot:spring-boot-starter-undertow"
     implementation "org.springframework.boot:spring-boot-starter-web"
-    testImplementation "org.springframework.boot:spring-boot-starter-test"
 }
 
 application {
-    mainClass = "${groupId}.Application"
+    mainClass = "io.github.syaku.file.FileServerApplication"
 }
 
 bootJar {
-    enabled true
-    launchScript()
+    enabled = true
+}
+
+jar {
+    enabled = false
 }

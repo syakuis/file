@@ -1,0 +1,187 @@
+version: '2'
+
+networks:
+  lpr-net:
+    driver: bridge
+services:
+  zookeeper:
+    image: wurstmeister/zookeeper:3.4.6
+    ports:
+      - "2181:2181"
+    networks:
+      - lpr-net
+  kafka:
+    image: wurstmeister/kafka:2.12-2.3.0
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      TZ: Asia/Seoul
+      KAFKA_BROKER_ID: 1
+      KAFKA_LISTENERS: "INTERNAL://:29092,EXTERNAL://:9092"
+      KAFKA_ADVERTISED_LISTENERS: "INTERNAL://kafka:29092,EXTERNAL://localhost:9092"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "INTERNAL"
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_HOST_NAME: kafka
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - lpr-net
+  kafdrop:
+    image: obsidiandynamics/kafdrop
+    depends_on:
+      - kafka
+    ports:
+      - "9000:9000"
+    volumes:
+      - /var/protobuf_desc:/var/protobuf_desc
+    environment:
+      TZ: Asia/Seoul
+      KAFKA_BROKERCONNECT: "kafka:29092"
+      JVM_OPTS: "-Xms32M -Xmx64M"
+      SERVER_SERVLET_CONTEXTPATH: "/"
+      CMD_ARGS: "--message.format=PROTOBUF --protobufdesc.directory=/var/protobuf_desc"
+    networks:
+      - lpr-net
+  mysql:
+    image: mysql:8.0.27
+    cap_add:
+      - SYS_NICE
+    ports:
+      - "3306:3306"
+    environment:
+      TZ: Asia/Seoul
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: license_plate_recognition
+      MYSQL_USER: platform
+      MYSQL_PASSWORD: platform@2020
+    command:
+      # utf8mb4 utf8mb4_unicode_ci --default-time-zone=+09:00
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=+09:00
+    volumes:
+      - "./init-docker.sql:/docker-entrypoint-initdb.d/init-docker.sql"
+    networks:
+      - lpr-net
+  zipkin:
+    image: openzipkin/zipkin
+    ports:
+      - "9411:9411"
+    environment:
+      TZ: Asia/Seoul
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+    networks:
+      - lpr-net
+
+  discovery:
+    image: adoptopenjdk:11.0.10_9-jdk-openj9-0.24.0
+    volumes:
+      - './license-plate-discovery/build/libs/license-plate-discovery-1.0.0-SNAPSHOT.jar:/var/license-plate-discovery/license-plate-discovery.jar'
+      - './license-plate-discovery/src/main/resources/application-docker.yml:/var/license-plate-discovery/config/application-docker.yml'
+    ports:
+      - "8761:8761"
+    command: "java -Xmx128m -Xms128m -Dfile.encoding=UTF-8 -Duser.timezone=GMT+9 -Dspring.profiles.active=docker -Dspring.config.location=classpath:/,file:/var/license-plate-discovery/config/ -jar /var/license-plate-discovery/license-plate-discovery.jar"
+    environment:
+      TZ: Asia/Seoul
+    networks:
+      - lpr-net
+  gateway:
+    image: adoptopenjdk:11.0.10_9-jdk-openj9-0.24.0
+    volumes:
+      - './license-plate-gateway/build/libs/license-plate-gateway-1.0.0-SNAPSHOT.jar:/var/license-plate-gateway/license-plate-gateway.jar'
+      - './license-plate-gateway/src/main/resources/application-docker.yml:/var/license-plate-gateway/config/application-docker.yml'
+    ports:
+      - "5000:5000"
+    command: "java -Xmx128m -Xms128m -Dfile.encoding=UTF-8 -Duser.timezone=GMT+9 -Dspring.profiles.active=docker -Dspring.config.location=classpath:/,file:/var/license-plate-gateway/config/ -jar /var/license-plate-gateway/license-plate-gateway.jar"
+    environment:
+      TZ: Asia/Seoul
+    networks:
+      - lpr-net
+
+  recognition:
+    image: adoptopenjdk:11.0.10_9-jdk-openj9-0.24.0
+    volumes:
+      - './license-plate-recognition/build/libs/license-plate-recognition-1.0.0-SNAPSHOT.jar:/var/license-plate-recognition/license-plate-recognition.jar'
+      - './license-plate-recognition/src/main/resources/application-docker.yml:/var/license-plate-recognition/config/application-docker.yml'
+    command: "java -Xmx128m -Xms128m -Dfile.encoding=UTF-8 -Duser.timezone=GMT+9 -Dspring.profiles.active=docker -Dspring.config.location=classpath:/,file:/var/license-plate-recognition/config/ -jar /var/license-plate-recognition/license-plate-recognition.jar"
+    environment:
+      TZ: Asia/Seoul
+    networks:
+      - lpr-net
+    depends_on:
+      - kafka
+      - zookeeper
+      - mysql
+  manual-correction:
+    image: adoptopenjdk:11.0.10_9-jdk-openj9-0.24.0
+    volumes:
+      - './license-plate-manual-correction/build/libs/license-plate-manual-correction-1.0.0-SNAPSHOT.jar:/var/license-plate-manual-correction/license-plate-manual-correction.jar'
+      - './license-plate-manual-correction/src/main/resources/application-docker.yml:/var/license-plate-manual-correction/config/application-docker.yml'
+    command: "java -Xmx128m -Xms128m -Dfile.encoding=UTF-8 -Duser.timezone=GMT+9 -Dspring.profiles.active=docker -Dspring.config.location=classpath:/,file:/var/license-plate-manual-correction/config/ -jar /var/license-plate-manual-correction/license-plate-manual-correction.jar"
+    environment:
+      TZ: Asia/Seoul
+    networks:
+      - lpr-net
+    depends_on:
+      - kafka
+      - zookeeper
+      - mysql
+  recognition-engine:
+    image: adoptopenjdk:11.0.10_9-jdk-openj9-0.24.0
+    volumes:
+      - './license-plate-recognition-engine/build/libs/license-plate-recognition-engine-1.0.0-SNAPSHOT.jar:/var/license-plate-recognition-engine/license-plate-recognition-engine.jar'
+      - './license-plate-recognition-engine/src/main/resources/application-docker.yml:/var/license-plate-recognition-engine/config/application-docker.yml'
+    command: "java -Xmx128m -Xms128m -Dfile.encoding=UTF-8 -Duser.timezone=GMT+9 -Dspring.profiles.active=docker -Dspring.config.location=classpath:/,file:/var/license-plate-recognition-engine/config/ -jar /var/license-plate-recognition-engine/license-plate-recognition-engine.jar"
+    environment:
+      TZ: Asia/Seoul
+    networks:
+      - lpr-net
+    depends_on:
+      - kafka
+      - zookeeper
+  recognition-01:
+    image: adoptopenjdk:11.0.10_9-jdk-openj9-0.24.0
+    volumes:
+      - './license-plate-recognition/build/libs/license-plate-recognition-1.0.0-SNAPSHOT.jar:/var/license-plate-recognition/license-plate-recognition.jar'
+      - './license-plate-recognition/src/main/resources/application-docker.yml:/var/license-plate-recognition/config/application-docker.yml'
+    command: "java -Xmx128m -Xms128m -Dfile.encoding=UTF-8 -Duser.timezone=GMT+9 -Dspring.profiles.active=docker -Dserver.port=8091 -Dspring.config.location=classpath:/,file:/var/license-plate-recognition/config/ -jar /var/license-plate-recognition/license-plate-recognition.jar"
+    environment:
+      TZ: Asia/Seoul
+    networks:
+      - lpr-net
+    depends_on:
+      - kafka
+      - zookeeper
+      - mysql
+  manual-correction-01:
+    image: adoptopenjdk:11.0.10_9-jdk-openj9-0.24.0
+    volumes:
+      - './license-plate-manual-correction/build/libs/license-plate-manual-correction-1.0.0-SNAPSHOT.jar:/var/license-plate-manual-correction/license-plate-manual-correction.jar'
+      - './license-plate-manual-correction/src/main/resources/application-docker.yml:/var/license-plate-manual-correction/config/application-docker.yml'
+    command: "java -Xmx128m -Xms128m -Dfile.encoding=UTF-8 -Duser.timezone=GMT+9 -Dspring.profiles.active=docker -Dserver.port=8092 -Dspring.config.location=classpath:/,file:/var/license-plate-manual-correction/config/ -jar /var/license-plate-manual-correction/license-plate-manual-correction.jar"
+    environment:
+      TZ: Asia/Seoul
+    networks:
+      - lpr-net
+    depends_on:
+      - kafka
+      - zookeeper
+      - mysql
+  recognition-engine-01:
+    image: adoptopenjdk:11.0.10_9-jdk-openj9-0.24.0
+    volumes:
+      - './license-plate-recognition-engine/build/libs/license-plate-recognition-engine-1.0.0-SNAPSHOT.jar:/var/license-plate-recognition-engine/license-plate-recognition-engine.jar'
+      - './license-plate-recognition-engine/src/main/resources/application-docker.yml:/var/license-plate-recognition-engine/config/application-docker.yml'
+    command: "java -Xmx128m -Xms128m -Dfile.encoding=UTF-8 -Duser.timezone=GMT+9 -Dspring.profiles.active=docker -Dserver.port=8090 -Dspring.config.location=classpath:/,file:/var/license-plate-recognition-engine/config/ -jar /var/license-plate-recognition-engine/license-plate-recognition-engine.jar"
+    environment:
+      TZ: Asia/Seoul
+    networks:
+      - lpr-net
+    depends_on:
+      - kafka
+      - zookeeper
+      - mysql

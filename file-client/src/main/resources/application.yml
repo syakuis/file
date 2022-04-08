@@ -1,0 +1,21 @@
+logging:
+  file:
+    name: default.log
+    path:
+  level:
+    root: info
+    org.springframework.web: debug
+    io.github.syakuis: trace
+server:
+  port: 28080
+  servlet:
+    encoding:
+      charset: utf-8
+spring:
+  application:
+    name: file-client
+  config:
+    import:
+      - classpath:properties/develop.yml
+  main:
+    banner-mode: console

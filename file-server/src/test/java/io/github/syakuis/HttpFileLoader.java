@@ -1,11 +1,10 @@
 package io.github.syakuis;
 
-import org.junit.jupiter.api.Test;
-
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Seok Kyun. Choi.

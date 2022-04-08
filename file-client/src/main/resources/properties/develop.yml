@@ -1,0 +1,2 @@
+file-server:
+  uri: http://localhost:28081
