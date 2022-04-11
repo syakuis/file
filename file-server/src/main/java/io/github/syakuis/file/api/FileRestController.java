@@ -42,7 +42,8 @@ public class FileRestController {
 
     @GetMapping(path = "/download/{filename}", produces = { MediaType.APPLICATION_OCTET_STREAM_VALUE })
     public void download(@PathVariable("filename") String filename, HttpServletResponse response) throws IOException {
-        log.info("파일 전송 준비 !!!");
+        long start = System.currentTimeMillis();
+        log.info("파일 전송 준비");
         Path path = Paths.get(fileServerRepositoryPath, filename);
 
         File file = path.toFile();
@@ -52,15 +53,13 @@ public class FileRestController {
         }
 
         try (InputStream stream = Files.newInputStream(path); OutputStream outputStream = response.getOutputStream()) {
-            log.info("파일 전송 전송 시작 !!!");
-            long start = System.currentTimeMillis();
-            stream.transferTo(outputStream);
-            outputStream.flush();
-            log.info("전송 완료 {} ms", System.currentTimeMillis() - start);
+            log.info("파일 전송 시작");
 
+            stream.transferTo(outputStream);
             setOctetStreamHeaders(response, file, filename);
+            outputStream.flush();
         }
 
-        log.info("파일 전송 완료 !!!");
+        log.info("파일 전송 완료 : {} ms", System.currentTimeMillis() - start);
     }
 }

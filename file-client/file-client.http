@@ -1,0 +1,3 @@
+### 파일 다운로드 요청
+GET http://localhost:28080/file/v1/files/download/exceljs-4.3.0.tar.gz
+#Content-Type: application/octet-stream

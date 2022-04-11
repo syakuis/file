@@ -1,2 +1,5 @@
 file-server:
   uri: http://localhost:28081
+file-client:
+  repository:
+    path:
